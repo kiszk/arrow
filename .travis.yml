@@ -211,6 +211,26 @@ matrix:
     script:
     - $TRAVIS_BUILD_DIR/ci/travis_script_integration.sh
     - $TRAVIS_BUILD_DIR/ci/travis_script_plasma_java_client.sh
+  # [PPC64LE] Integration w/ OpenJDK 8
+  - language: java
+    os: linux-ppc64le
+    env: ARROW_TEST_GROUP=integration
+    jdk: openjdk8
+    env:
+    - ARROW_TRAVIS_PLASMA=1
+    - ARROW_TRAVIS_PLASMA_JAVA_CLIENT=1
+    - CC="clang-6.0"
+    - CXX="clang++-6.0"
+    before_script:
+    - if [ $ARROW_CI_INTEGRATION_AFFECTED != "1" ]; then exit; fi
+    - $TRAVIS_BUILD_DIR/ci/travis_install_linux.sh
+    - $TRAVIS_BUILD_DIR/ci/travis_install_clang_tools.sh
+    - nvm install 10.1
+    - $TRAVIS_BUILD_DIR/ci/travis_before_script_js.sh
+    - $TRAVIS_BUILD_DIR/ci/travis_before_script_cpp.sh
+    script:
+    - $TRAVIS_BUILD_DIR/ci/travis_script_integration.sh
+    - $TRAVIS_BUILD_DIR/ci/travis_script_plasma_java_client.sh
   # NodeJS
   - language: node_js
     os: linux
