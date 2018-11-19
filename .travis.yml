@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
 sudo: required
 dist: trusty
 
@@ -143,7 +142,7 @@ matrix:
     - $TRAVIS_BUILD_DIR/ci/travis_before_script_cpp.sh
     script:
     - if [ $ARROW_CI_CPP_AFFECTED == "1" ]; then $TRAVIS_BUILD_DIR/ci/travis_script_cpp.sh; fi
-    --- $TRAVIS_BUILD_DIR/ci/travis_script_python.sh 2.7
+    - $TRAVIS_BUILD_DIR/ci/travis_script_python.sh 2.7
     - $TRAVIS_BUILD_DIR/ci/travis_script_python.sh 3.6
   # [OS X] Gandiva C++ w/ XCode 8.3 & Java
   - compiler: clang
