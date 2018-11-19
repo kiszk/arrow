@@ -142,7 +142,7 @@ matrix:
     - $TRAVIS_BUILD_DIR/ci/travis_before_script_cpp.sh
     script:
     - if [ $ARROW_CI_CPP_AFFECTED == "1" ]; then $TRAVIS_BUILD_DIR/ci/travis_script_cpp.sh; fi
-    - $TRAVIS_BUILD_DIR/ci/travis_script_python.sh 2.7
+    --- $TRAVIS_BUILD_DIR/ci/travis_script_python.sh 2.7
     - $TRAVIS_BUILD_DIR/ci/travis_script_python.sh 3.6
   # [OS X] Gandiva C++ w/ XCode 8.3 & Java
   - compiler: clang
@@ -179,6 +179,30 @@ matrix:
     script:
     - $TRAVIS_BUILD_DIR/ci/travis_script_java.sh
     - $TRAVIS_BUILD_DIR/ci/travis_script_javadoc.sh
+  # [ppc64le] Java w/ OpenJDK 8
+  - language: java
+    os: linux-ppc64le
+    jdk: openjdk8
+    before_script:
+    - if [ $ARROW_CI_JAVA_AFFECTED != "1" ]; then exit; fi
+    - $TRAVIS_BUILD_DIR/ci/travis_install_linux.sh
+    script:
+    - $TRAVIS_BUILD_DIR/ci/travis_script_java.sh
+    - $TRAVIS_BUILD_DIR/ci/travis_script_javadoc.sh
+  # [s390x] Java w/ OpenJDK 8
+  - language: java
+    os: linux
+    env:
+      - OS_NAME=debian
+      - OS_VERSION=jessie
+      - ARCH=s390x
+    jdk: openjdk8
+    before_script:
+    - if [ $ARROW_CI_JAVA_AFFECTED != "1" ]; then exit; fi
+    - $TRAVIS_BUILD_DIR/ci/travis_install_linux.sh
+    script:
+    - $TRAVIS_BUILD_DIR/ci/travis_script_java.sh
+    - $TRAVIS_BUILD_DIR/ci/travis_script_javadoc.sh
   # Java w/ Oracle JDK 9
   - language: java
     os: linux
@@ -194,26 +218,6 @@ matrix:
   # Integration w/ OpenJDK 8
   - language: java
     os: linux
-    env: ARROW_TEST_GROUP=integration
-    jdk: openjdk8
-    env:
-    - ARROW_TRAVIS_PLASMA=1
-    - ARROW_TRAVIS_PLASMA_JAVA_CLIENT=1
-    - CC="clang-6.0"
-    - CXX="clang++-6.0"
-    before_script:
-    - if [ $ARROW_CI_INTEGRATION_AFFECTED != "1" ]; then exit; fi
-    - $TRAVIS_BUILD_DIR/ci/travis_install_linux.sh
-    - $TRAVIS_BUILD_DIR/ci/travis_install_clang_tools.sh
-    - nvm install 10.1
-    - $TRAVIS_BUILD_DIR/ci/travis_before_script_js.sh
-    - $TRAVIS_BUILD_DIR/ci/travis_before_script_cpp.sh
-    script:
-    - $TRAVIS_BUILD_DIR/ci/travis_script_integration.sh
-    - $TRAVIS_BUILD_DIR/ci/travis_script_plasma_java_client.sh
-  # [PPC64LE] Integration w/ OpenJDK 8
-  - language: java
-    os: linux-ppc64le
     env: ARROW_TEST_GROUP=integration
     jdk: openjdk8
     env:
