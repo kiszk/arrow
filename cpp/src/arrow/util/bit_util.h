@@ -390,8 +390,8 @@ template<> inline bool endian_reverse(bool value) {
   return value;
 }
 
-#define ARROW_LE2BE_CONVERSION(x) BitUtil::endian_reverse(x);
-#define ARROW_BE2LE_CONVERSION(x) BitUtil::endian_reverse(x);
+#define ARROW_LE2BE_CONVERSION(x) BitUtil::endian_reverse(x)
+#define ARROW_BE2LE_CONVERSION(x) BitUtil::endian_reverse(x)
 #endif
 
 // Convert from big/little endian format to the machine's native endian format.
@@ -1003,10 +1003,10 @@ class ARROW_EXPORT Bitmap : public util::ToStringOstreamable<Bitmap>,
             visited_words[i] = words[i][word_i] >> offsets[i];
             visited_words[i] |= words[i][word_i + 1] << (kBitWidth - offsets[i]);
 #else
-            auto words0 = ARROW_BE2LE_CONVERSION(words[i][word_i])
-            auto words1 = ARROW_BE2LE_CONVERSION(words[i][word_i + 1])
+            auto words0 = ARROW_BE2LE_CONVERSION(words[i][word_i]);
+            auto words1 = ARROW_BE2LE_CONVERSION(words[i][word_i + 1]);
             auto visited_word = (words0 >> offsets[i]) | (words1 << (kBitWidth - offsets[i]));
-	    visited_words[i] = ARROW_LE2BE_CONVERSION(visited_word)
+	    visited_words[i] = ARROW_LE2BE_CONVERSION(visited_word);
 #endif
           }
         }

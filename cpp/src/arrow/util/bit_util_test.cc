@@ -1123,7 +1123,7 @@ TEST(Bitmap, ShiftingWordsOptimization) {
     for (int seed = 0; seed < 64; ++seed) {
       random_bytes(sizeof(word), seed, bytes);
       uint64_t original_word = word;
-      word = ARROW_BE2LE_CONVERSION(word) // convert bytes to in little-endian
+      word = ARROW_BE2LE_CONVERSION(word);  // convert bytes to in little-endian
 
       // bits are accessible through simple bit shifting of the word
       for (size_t i = 0; i < kBitWidth; ++i) {
@@ -1134,7 +1134,7 @@ TEST(Bitmap, ShiftingWordsOptimization) {
       // this test assumes the little endian memory layout in bytes
       for (size_t offset = 0; offset < (kBitWidth * 3) / 4; ++offset) {
         uint64_t shifted_word = original_word >> offset;
-        shifted_word = ARROW_BE2LE_CONVERSION(shifted_word)
+        shifted_word = ARROW_BE2LE_CONVERSION(shifted_word);
         auto shifted_bytes = reinterpret_cast<uint8_t*>(&shifted_word);
         ASSERT_TRUE(
             internal::BitmapEquals(bytes, offset, shifted_bytes, 0, kBitWidth - offset));
@@ -1152,8 +1152,8 @@ TEST(Bitmap, ShiftingWordsOptimization) {
       random_bytes(sizeof(words), seed, bytes);
       uint64_t original_words0 = words[0];
       uint64_t original_words1 = words[1];
-      words[0] = ARROW_BE2LE_CONVERSION(words[0]) // convert bytes to in little-endian
-      words[1] = ARROW_BE2LE_CONVERSION(words[1]) // convert bytes to in little-endian
+      words[0] = ARROW_BE2LE_CONVERSION(words[0]);  // convert bytes to in little-endian
+      words[1] = ARROW_BE2LE_CONVERSION(words[1]);  // convert bytes to in little-endian
 
       // bits are accessible through simple bit shifting of a word
       for (size_t i = 0; i < kBitWidth; ++i) {
@@ -1168,8 +1168,8 @@ TEST(Bitmap, ShiftingWordsOptimization) {
         uint64_t shifted_words[2];
         shifted_words[0] = original_words0 >> offset | (original_words1 << (kBitWidth - offset));
         shifted_words[1] = original_words1 >> offset;
-        shifted_words[0] = ARROW_BE2LE_CONVERSION(shifted_words[0])
-        shifted_words[1] = ARROW_BE2LE_CONVERSION(shifted_words[1])
+        shifted_words[0] = ARROW_BE2LE_CONVERSION(shifted_words[0]);
+        shifted_words[1] = ARROW_BE2LE_CONVERSION(shifted_words[1]);
         auto shifted_bytes = reinterpret_cast<uint8_t*>(shifted_words);
 
         // from offset to unshifted word boundary
