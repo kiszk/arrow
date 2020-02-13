@@ -65,6 +65,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <boost/endian/conversion.hpp>
 
 #include "arrow/buffer.h"
 #include "arrow/result.h"
@@ -365,6 +366,8 @@ template <typename T, typename = internal::EnableIfIsOneOf<T, int64_t, uint64_t,
 static inline T ToLittleEndian(T value) {
   return value;
 }
+#define ARROW_LE2BE_CONVERSION(value) value
+#define ARROW_BE2LE_CONVERSION(value) value
 #else
 template <typename T, typename = internal::EnableIfIsOneOf<T, int64_t, uint64_t, int32_t,
                                                            uint32_t, int16_t, uint16_t>>
@@ -377,6 +380,18 @@ template <typename T, typename = internal::EnableIfIsOneOf<T, int64_t, uint64_t,
 static inline T ToLittleEndian(T value) {
   return ByteSwap(value);
 }
+
+template<class T> inline T endian_reverse(T value) {
+  return boost::endian::endian_reverse(value);
+}
+
+template<> inline bool endian_reverse(bool value) {
+  static_assert(sizeof(bool) == 1);
+  return value;
+}
+
+#define ARROW_LE2BE_CONVERSION(x) BitUtil::endian_reverse(x);
+#define ARROW_BE2LE_CONVERSION(x) BitUtil::endian_reverse(x);
 #endif
 
 // Convert from big/little endian format to the machine's native endian format.
@@ -984,8 +999,15 @@ class ARROW_EXPORT Bitmap : public util::ToStringOstreamable<Bitmap>,
           if (offsets[i] == 0) {
             visited_words[i] = words[i][word_i];
           } else {
+#if ARROW_LITTLE_ENDIAN
             visited_words[i] = words[i][word_i] >> offsets[i];
             visited_words[i] |= words[i][word_i + 1] << (kBitWidth - offsets[i]);
+#else
+            auto words0 = ARROW_BE2LE_CONVERSION(words[i][word_i])
+            auto words1 = ARROW_BE2LE_CONVERSION(words[i][word_i + 1])
+            auto visited_word = (words0 >> offsets[i]) | (words1 << (kBitWidth - offsets[i]));
+	    visited_words[i] = ARROW_LE2BE_CONVERSION(visited_word)
+#endif
           }
         }
         visitor(visited_words);
