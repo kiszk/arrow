@@ -48,7 +48,7 @@ jobs:
         ARCH: s390x
         ARROW_CI_MODULES: "CPP"
         ARROW_CSV: "OFF"
-        ARROW_FLIGHT: "OFF"
+        ARROW_FLIGHT: "ON"
         ARROW_GANDIVA: "OFF"
         ARROW_PARQUET: "OFF"
         PARQUET_BUILD_EXAMPLES: "OFF"
