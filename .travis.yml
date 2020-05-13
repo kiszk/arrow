@@ -96,7 +96,7 @@ script:
       -e ARROW_PARQUET=${ARROW_PARQUET:-ON} \
       -e PARQUET_BUILD_EXAMPLES=${PARQUET_BUILD_EXAMPLES:-ON} \
       -e PARQUET_BUILD_EXECUTABLES=${PARQUET_BUILD_EXECUTABLES:-ON} \
-      -e "c-ares_SOURCE=${cares_SOURCE:-AUTO}" \
+      -e cares_SOURCE=${cares_SOURCE:-AUTO} \
       -e Protobuf_SOURCE=${Protobuf_SOURCE:-AUTO} \
       --volume ${PWD}/build:/build \
       ${DOCKER_IMAGE_ID}
