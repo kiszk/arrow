@@ -26,7 +26,7 @@ import pathlib
 import sys
 
 from .benchmark.compare import RunnerComparator, DEFAULT_THRESHOLD
-from .benchmark.runner import CppBenchmarkRunner
+from .benchmark.runner import CppBenchmarkRunner, JavaBenchmarkRunner
 from .lang.cpp import CppCMakeDefinition, CppConfiguration
 from .utils.codec import JsonEncoder
 from .utils.lint import linter, python_numpydoc, LintValidationException
@@ -124,7 +124,7 @@ def java_toolchain_options(cmd):
     options = [
         click.option("--java-home", metavar="<java_home>",
                      help="Path to Java Developers Kit."),
-        click.option("--java-flags", help="java compiler flags."),
+        click.option("--java-options", help="java compiler options."),
     ]
     return _apply_options(cmd, options)
 
@@ -384,12 +384,15 @@ def benchmark_common_options(cmd):
         click.option("--language", metavar="<lang>", type=str, default="cpp",
                      show_default=True, callback=check_language,
                      help="Specify target language for the benchmark"),
-        click.option("--mvn-extras", type=str, multiple=True,
-                     help="Extra flags/options to pass to mvn. "
-                     "Can be stacked"),
+        click.option("--build-extras", type=str, multiple=True,
+                     help="Extra flags/options to pass to mvn build. "
+                     "Can be stackd. For language=java"),
+        click.option("--benchmark-extras", type=str, multiple=True,
+                     help="Extra flags/options to pass to mvn benchmark. "
+                     "Can be stackd. For language=java"),
         click.option("--cmake-extras", type=str, multiple=True,
                      help="Extra flags/options to pass to cmake invocation. "
-                     "Can be stacked"),
+                     "Can be stacked. For language=cpp"),
     ]
 
     cmd = java_toolchain_options(cmd)
@@ -415,8 +418,22 @@ def benchmark_filter_options(cmd):
 @benchmark_common_options
 @click.pass_context
 def benchmark_list(ctx, rev_or_path, src, preserve, output, cmake_extras,
-                   **kwargs):
+                   language, build_extras, benchmark_extras, java_home,
+                   java_options, **kwargs):
     """ List benchmark suite.
+    """
+    if language == "cpp":
+        ctx.forward(benchmark_list_cpp, **kwargs)
+    elif language == "java":
+        ctx.forward(benchmark_list_java, **kwargs)
+
+
+@benchmark.command(name="list_cpp")
+@click.pass_context
+def benchmark_list_cpp(ctx, rev_or_path, src, preserve, output, cmake_extras,
+                       language, build_extras, benchmark_extras, java_home,
+                       java_options, **kwargs):
+    """ List cpp benchmark suite.
     """
     with tmpdir(preserve=preserve) as root:
         logger.debug("Running benchmark {}".format(rev_or_path))
@@ -431,6 +448,28 @@ def benchmark_list(ctx, rev_or_path, src, preserve, output, cmake_extras,
             click.echo(b, file=output)
 
 
+@benchmark.command(name="list_java")
+@click.pass_context
+def benchmark_list_java(ctx, rev_or_path, src, preserve, output, language,
+                        java_home, java_options, build_extras, benchmark_extras,
+                        cmake_extras, cc, cxx, cxx_flags, cpp_package_prefix,
+                        **kwargs):
+    """ List java benchmark suite.
+    """
+    with tmpdir(preserve=preserve) as root:
+        logger.debug("Running benchmark {}".format(rev_or_path))
+
+        conf = JavaBenchmarkRunner.default_configuration(
+            java_home=java_home, java_options=java_options,
+            build_extras=build_extras, benchmark_extras=benchmark_extras, **kwargs)
+
+        runner_base = JavaBenchmarkRunner.from_rev_or_path(
+            src, root, rev_or_path, conf)
+
+        for b in runner_base.list_benchmarks:
+            click.echo(b, file=output)
+
+
 @benchmark.command(name="run", short_help="Run benchmark suite")
 @click.argument("rev_or_path", metavar="[<rev_or_path>]",
                 default="WORKSPACE", required=False)
@@ -438,7 +477,7 @@ def benchmark_list(ctx, rev_or_path, src, preserve, output, cmake_extras,
 @benchmark_filter_options
 @click.pass_context
 def benchmark_run(ctx, rev_or_path, src, preserve, output, cmake_extras,
-                  suite_filter, benchmark_filter, **kwargs):
+                  language, suite_filter, benchmark_filter, **kwargs):
     """ Run benchmark suite.
 
     This command will run the benchmark suite for a single build. This is
@@ -471,6 +510,20 @@ def benchmark_run(ctx, rev_or_path, src, preserve, output, cmake_extras,
     \b
     archery benchmark run --output=run.json
     """
+    if language == "cpp":
+        ctx.forward(benchmark_run_cpp, **kwargs)
+    elif language == "java":
+        ctx.forward(benchmark_run_java, **kwargs)
+
+
+@benchmark.command(name="run_cpp")
+@click.pass_context
+def benchmark_run_cpp(ctx, rev_or_path, src, preserve, output, cmake_extras,
+                      language, build_extras, benchmark_extras, java_home,
+                      java_options, suite_filter, benchmark_filter, **kwargs):
+    """ Run cpp benchmark suite.
+    """
+
     with tmpdir(preserve=preserve) as root:
         logger.debug("Running benchmark {}".format(rev_or_path))
 
@@ -480,6 +533,29 @@ def benchmark_run(ctx, rev_or_path, src, preserve, output, cmake_extras,
         runner_base = CppBenchmarkRunner.from_rev_or_path(
             src, root, rev_or_path, conf,
             suite_filter=suite_filter, benchmark_filter=benchmark_filter)
+
+        json.dump(runner_base, output, cls=JsonEncoder)
+
+
+@benchmark.command(name="run_java")
+@click.pass_context
+def benchmark_run_java(ctx, rev_or_path, src, preserve, output, language,
+                       java_home, java_options, build_extras, benchmark_extras,
+                       cmake_extras, cc, cxx, cxx_flags, cpp_package_prefix,
+                       suite_filter, benchmark_filter, **kwargs):
+    """ Run Java benchmark suite.
+    """
+
+    with tmpdir(preserve=preserve) as root:
+        logger.debug("Running benchmark {}".format(rev_or_path))
+
+        conf = JavaBenchmarkRunner.default_configuration(
+            java_home=java_home, java_options=java_options,
+            build_extras=build_extras, benchmark_extras=benchmark_extras, **kwargs)
+
+        runner_base = JavaBenchmarkRunner.from_rev_or_path(
+            src, root, rev_or_path, conf,
+            benchmark_filter=benchmark_filter)
 
         json.dump(runner_base, output, cls=JsonEncoder)
 
@@ -582,7 +658,7 @@ def benchmark_diff(ctx, src, preserve, output, language, cmake_extras,
 def benchmark_diff_cpp(ctx, src, preserve, output, language, cmake_extras,
                        suite_filter, benchmark_filter,
                        repetitions, threshold, contender, baseline,
-                       mvn_extras, java_home, java_flags,
+                       build_extras, benchmark_extras, java_home, java_options,
                        **kwargs):
     """Compare (diff) cpp benchmark runs."""
 
@@ -616,14 +692,38 @@ def benchmark_diff_cpp(ctx, src, preserve, output, language, cmake_extras,
 @benchmark.command(name="diff_java")
 @click.pass_context
 def benchmark_diff_java(ctx, src, preserve, output, language,
+                        java_home, java_options, build_extras, benchmark_extras,
                         suite_filter, benchmark_filter,
                         repetitions, threshold, contender, baseline,
-                        cmake_extras, cc, cxx, cxx_flags, cxx_package_prefix,
+                        cmake_extras, cc, cxx, cxx_flags, cpp_package_prefix,
                         **kwargs):
     """Compare (diff) java benchmark runs."""
 
-    print("Not supported yet")
-    exit(1)
+    with tmpdir(preserve=preserve) as root:
+        logger.debug("Comparing {} (contender) with {} (baseline)"
+                     .format(contender, baseline))
+
+        conf = JavaBenchmarkRunner.default_configuration(
+            java_home=java_home, java_options=java_options,
+            build_extras=build_extras, benchmark_extras=benchmark_extras,
+            **kwargs)
+
+        runner_cont = JavaBenchmarkRunner.from_rev_or_path(
+            src, root, contender, conf,
+            repetitions=repetitions,
+            benchmark_filter=benchmark_filter)
+        runner_base = JavaBenchmarkRunner.from_rev_or_path(
+            src, root, baseline, conf,
+            repetitions=repetitions,
+            benchmark_filter=benchmark_filter)
+
+        runner_comp = RunnerComparator(runner_cont, runner_base, threshold)
+
+        # TODO(kszucs): test that the output is properly formatted jsonlines
+        comparisons_json = _get_comparisons_as_json(runner_comp.comparisons)
+        formatted = _format_comparisons_with_pandas(comparisons_json)
+        output.write(formatted)
+        output.write('\n')
 
 
 def _get_comparisons_as_json(comparisons):
@@ -641,6 +741,7 @@ def _format_comparisons_with_pandas(comparisons_json):
     # parse change % so we can sort by it
     df['change %'] = df.pop('change').str[:-1].map(float)
     df = df[['benchmark', 'baseline', 'contender', 'change %', 'counters']]
+    df = df.rename(columns={'counters' : 'configurations'})
     df = df.sort_values(by='change %', ascending=False)
     return df.to_string()
 
