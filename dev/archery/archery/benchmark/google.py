@@ -163,7 +163,7 @@ class GoogleBenchmark(Benchmark):
         super().__init__(name, unit, less_is_better, values)
 
     def __repr__(self):
-        return "GoogleBenchmark[name={},runs={}]".format(self.names, self.runs)
+        return "GoogleBenchmark[name={},runs={}]".format(self.name, self.runs)
 
     @classmethod
     def from_json(cls, payload):
