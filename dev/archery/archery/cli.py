@@ -741,7 +741,7 @@ def _format_comparisons_with_pandas(comparisons_json):
     # parse change % so we can sort by it
     df['change %'] = df.pop('change').str[:-1].map(float)
     df = df[['benchmark', 'baseline', 'contender', 'change %', 'counters']]
-    df = df.rename(columns={'counters' : 'configurations'})
+    df = df.rename(columns={'counters': 'configurations'})
     df = df.sort_values(by='change %', ascending=False)
     return df.to_string()
 
